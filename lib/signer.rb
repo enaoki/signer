@@ -224,13 +224,13 @@ class Signer
   #   </X509Data>
   # </SecurityTokenReference> (optional)
   # </KeyInfo>
-  def x509_data_node(issuer_in_security_token = false, without_issuer = false)
+  def x509_data_node(issuer_in_security_token = false, with_issuer = true)
     cetificate_node    = Nokogiri::XML::Node.new('X509Certificate', document)
     cetificate_node.content = Base64.encode64(cert.to_der).delete("\n")
 
     data_node          = Nokogiri::XML::Node.new('X509Data', document)
 
-    unless (without_issuer)
+    if (with_issuer)
       issuer_name_node   = Nokogiri::XML::Node.new('X509IssuerName', document)
       issuer_name_node.content = cert.issuer.to_s(OpenSSL::X509::Name::RFC2253)
 
@@ -259,10 +259,10 @@ class Signer
     set_namespace_for_node(key_info_node, DS_NAMESPACE, ds_namespace_prefix)
     set_namespace_for_node(security_token_reference_node, WSSE_NAMESPACE, ds_namespace_prefix) if issuer_in_security_token
     set_namespace_for_node(data_node, DS_NAMESPACE, ds_namespace_prefix)
-    set_namespace_for_node(issuer_serial_node, DS_NAMESPACE, ds_namespace_prefix)
+    set_namespace_for_node(issuer_serial_node, DS_NAMESPACE, ds_namespace_prefix) if with_issuer
     set_namespace_for_node(cetificate_node, DS_NAMESPACE, ds_namespace_prefix)
-    set_namespace_for_node(issuer_name_node, DS_NAMESPACE, ds_namespace_prefix)
-    set_namespace_for_node(issuer_number_node, DS_NAMESPACE, ds_namespace_prefix)
+    set_namespace_for_node(issuer_name_node, DS_NAMESPACE, ds_namespace_prefix) if with_issuer
+    set_namespace_for_node(issuer_number_node, DS_NAMESPACE, ds_namespace_prefix) if with_issuer
 
     data_node
   end
@@ -353,7 +353,7 @@ class Signer
     end
 
     if options[:issuer_serial]
-      x509_data_node(options[:issuer_in_security_token], options[:without_issuer])
+      x509_data_node(options[:issuer_in_security_token], options[:with_issuer])
     end
 
     if options[:inclusive_namespaces]
